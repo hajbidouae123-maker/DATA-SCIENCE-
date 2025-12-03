@@ -3,7 +3,7 @@
 
 Numéro d'étudiant : 25007751
 Classe : CAC2
-[11:15, 03/12/2025] Hajar Hamine: # Compte rendu
+ # Compte rendu
 ## Analyse Prédictive de Régression sur les Prix de Voitures
 
 Date : 03 Décembre 2025
