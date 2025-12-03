@@ -197,8 +197,10 @@ print("--- Comparaison des performances des modèles de régression ---")
 print(metrics_df_sorted.to_markdown(numalign="left", stralign="left"))
 ```
 Gradient Boosting surpasse les autres, indiquant des relations non linéaires. Les modèles linéaires sont similaires, sans gain notable de régularisation.
+
 5. Conclusion
-Ce projet a permis de valider plusieurs concepts clés en Data Science :
+
+6. Ce projet a permis de valider plusieurs concepts clés en Data Science :
 1. Exploration : Comprendre la structure et nettoyer les données (doublons, encodage) est crucial avant la modélisation.
 2. Prétraitement : La création de features comme car_age et l'encodage one-hot sont indispensables pour les algorithmes de régression.
 3. Méthodologie : La comparaison de multiples modèles (linéaires à non linéaires) et l'évaluation rigoureuse (MAE, MSE, R²) permettent d'identifier le meilleur (Gradient Boosting) et d'éviter les biais.
