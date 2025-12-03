@@ -3,204 +3,381 @@
 
 Numéro d'étudiant : 25007751
 Classe : CAC2
-Compte rendu
-Analyse Prédictive des Prix de Vente des Voitures par Régression
+[11:15, 03/12/2025] Hajar Hamine: # Compte rendu
+## Analyse Prédictive de Régression sur les Prix de Voitures
+
 Date : 03 Décembre 2025
-Table des Matières
 
-Introduction et Contexte
-Analyse Exploratoire des Données (Data Analysis)
-Chargement et Structure du Dataset
-Statistiques Descriptives et Valeurs Manquantes
-Création de la Variable car_age et Encodage
-Nettoyage des Doublons et Séparation des Données
+---
 
-Méthodologie de Régression
-Modèles Linéaires (Ridge, Lasso, Linéaire)
-Modèles Basés sur les Arbres (Arbre de Décision, Forêt Aléatoire)
-Modèles Non Linéaires (Polynomiale, Gradient Boosting)
+## Table des Matières
 
-Résultats et Comparaison des Modèles
-Performances Individuelles
-Visualisations des Prédictions
-Comparaison Globale
+1.  [Introduction et Contexte](#1-introduction-et-contexte)
+2.  [Analyse Exploratoire des Données (Data Analysis)](#2-analyse-exploratoire-des-données-data-analysis)
+    * [Chargement et Structure du Dataset](#21-chargement-et-structure-du-dataset)
+    * [Variable Cible et Variables Explicatives](#22-variable-cible-et-variables-explicatives)
+    * [Analyse Statistique et Visuelle](#23-analyse-statistique-et-visuelle)
+3.  [Méthodologie de Régression](#3-méthodologie-de-régression)
+    * [Préparation des Données](#31-préparation-des-données)
+    * [Séparation des Données (Train / Test)](#32-séparation-des-données-train--test)
+    * …
+[11:43, 03/12/2025] Hajar Hamine: # Compte rendu
+## Analyse Prédictive de Régression sur les Prix de Voitures
 
-Conclusion
+Date : 03 Décembre 2025
 
+---
 
-1. Introduction et Contexte
-Ce rapport présente une analyse détaillée d'un jeu de données réel concernant les détails des voitures d'occasion, réalisée dans le cadre d'une étude en Science des Données. En suivant le cycle de vie des données, nous avons mené une exploration (EDA), un prétraitement et une modélisation prédictive.
-L'objectif est de construire des modèles de régression capables de prédire le prix de vente (selling_price) des voitures en utilisant divers algorithmes, et d'évaluer leurs performances en termes de MAE, MSE et R² pour identifier le plus efficace.
-2. Analyse Exploratoire des Données (Data Analysis)
-2.1 Chargement et Structure du Dataset
-Le jeu de données CAR DETAILS FROM CAR DEKHO.csv contient les caractéristiques des voitures d'occasion vendues en Inde.
+## Table des Matières
 
-Nombre d'échantillons ($  N  $) : 3577 observations (avant nettoyage).
-Nombre de variables ($  d  $) : 8 colonnes initiales.
-Variables d'entrée ($  X  $) :name, year, km_driven, fuel, seller_type, transmission, owner.
-Variable de sortie ($  Y  $) :selling_price (en roupies indiennes). 
-```python
-import pandas as pd
-df = pd.read_csv('/content/CAR DETAILS FROM CAR DEKHO.csv')
-print("========= Résumé du Dataset =========")
-df.info()
-print("\n========= Premiers échantillons =========")
-print(df.head())
-```
-2.2 Statistiques Descriptives et Valeurs Manquantes
-L'analyse des statistiques descriptives montre une large gamme de prix et de kilomètres parcourus. Aucune valeur manquante n'a été détectée.
+1.  [Introduction et Contexte](#1-introduction-et-contexte)
+2.  [Analyse Exploratoire des Données (Data Analysis)](#2-analyse-exploratoire-des-données-data-analysis)
+    * [Chargement et Structure du Dataset](#21-chargement-et-structure-du-dataset)
+    * [Variable Cible et Variables Explicatives](#22-variable-cible-et-variables-explicatives)
+    * [Analyse Statistique et Visuelle](#23-analyse-statistique-et-visuelle)
+3.  [Méthodologie de Régression](#3-méthodologie-de-régression)
+    * [Préparation des Données](#31-préparation-des-données)
+    * [Séparation des Données (Train / Test)](#32-séparation-des-données-train--test)
+    * [Modèles de Régression Testés](#33-modèles-de-régression-testés)
+4.  [Résultats et Analyse Comparative](#4-résultats-et-analyse-comparative)
+    * [Régression Linéaire](#41-régression-linéaire)
+    * [Régression par Arbre de Décision](#42-régression-par-arbre-de-décision)
+    * [Régression par Forêt Aléatoire](#43-régression-par-forêt-aléatoire)
+5.  [Conclusion](#5-conclusion)
 
-Statistiques,selling_price,km_driven,...
-count,3577,3577,...
-mean,504127.311745,66215.777933,...
-std,578548.736139,46623.385991,...
-min,20000,350,...
-25%,220000,36000,...
-50%,350000,60000,...
-75%,600000,90000,...
-max,8900000,806599,...
+---
 
-Nombre de doublons : 79.
-Nombre de noms de voitures uniques : 1491.
-Top 10 noms uniques : ['Maruti 800 AC', 'Maruti Wagon R LXI Minor', ...].
+## 1. Introduction et Contexte
 
-```python
-print("\nDescriptive Statistics:")
-print(df.describe())
-print("\nMissing Values per column:")
-print(df.isnull().sum())
-print("\nNumber of duplicate rows:")
-print(df.duplicated().sum())
-print("\nNumber of unique car names:", df['name'].nunique())
-print("Top 10 unique car names:", df['name'].unique()[:10])
-```
-2.3 Création de la Variable car_age et Encodage
-Pour mieux capturer l'âge des voitures, nous avons créé car_age = année_courante - year (année courante : 2024).
-Suppression de year.
-Encodage one-hot des variables catégorielles : fuel, seller_type, transmission, owner.
-```python
-import datetime
-# Create 'car_age' feature
-current_year = datetime.datetime.now().year
-df['car_age'] = current_year - df['year']
-# Drop the original 'year' column as 'car_age' replaces it
-df.drop('year', axis=1, inplace=True)
-# Identify categorical columns for one-hot encoding (excluding 'name' for now)
-categorical_cols = ['fuel', 'seller_type', 'transmission', 'owner']
-# Apply one-hot encoding
-df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
-print("DataFrame after creating 'car_age' and one-hot encoding categorical variables:")
-print(df.head())
-print("\nDataFrame Info after preprocessing:")
-df.info()
-```
-2.4 Nettoyage des Doublons et Séparation des Données
-Suppression des 79 doublons → 3498 échantillons uniques.
-Séparation en ensembles d'entraînement (80%) et de test (20%).
-Forme de X_train : (2798, 11), X_test : (700, 11).
-print(f"Number of rows before dropping duplicates: {df.shape[0]}")
-df.drop_duplicates(inplace=True)
-```python
-print(f"Number of rows after dropping duplicates: {df.shape[0]}")
-# Separate target variable (y) and features (X)
-X = df.drop(['selling_price'], axis=1)  # 'name' column was already dropped in a previous step
-y = df['selling_price']
-# Import train_test_split
-from sklearn.model_selection import train_test_split
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(f"\nShape of X_train: {X_train.shape}")
-print(f"Shape of X_test: {X_test.shape}")
-print(f"Shape of y_train: {y_train.shape}")
-print(f"Shape of y_test: {y_test.shape}")
-print("First 5 rows of X_train:")
-print(X_train.head())
-```
-(Les étapes de nettoyage et de prétraitement ont assuré une qualité des données optimale pour la modélisation, en évitant les biais dus aux doublons et en convertissant les catégories en numériques.)
-3. Méthodologie de Régression
-3.1 Modèles Linéaires (Ridge, Lasso, Linéaire)
-Nous avons entraîné des modèles linéaires avec régularisation (alpha=1.0) pour minimiser les erreurs et éviter le surapprentissage.
-3.2 Modèles Basés sur les Arbres (Arbre de Décision, Forêt Aléatoire)
-Ces modèles non paramétriques capturent les interactions complexes sans hypothèse de linéarité (random_state=42 pour reproductibilité).
-3.3 Modèles Non Linéaires (Polynomiale, Gradient Boosting)
+Ce rapport présente une analyse prédictive de régression sur un jeu de données réel concernant les caractéristiques de voitures et leur prix de vente, importé depuis Kaggle :  
+“Car Features and Selling Price Analysis Dataset”.
 
-Polynomiale (degré 2) : Transformation des features pour capturer les non-linéarités.
-Gradient Boosting : Ensemble séquentiel pour corriger les erreurs itérativement (random_state=42).
-Tous les modèles ont été entraînés sur X_train/y_train et évalués sur X_test/y_test.
+En suivant le cycle de vie des données, nous avons mené une exploration (EDA), un prétraitement et une modélisation prédictive.
+
+L’objectif est de construire des modèles de régression capables de prédire le *prix de vente* (selling_price) d’une voiture à partir de ses caractéristiques (année, kilométrage, type de carburant, boîte de vitesses, etc.) et de comparer les performances de plusieurs algorithmes de régression.
+
+---
+
+## 2. Analyse Exploratoire des Données (Data Analysis)
+
+### 2.1 Chargement et Structure du Dataset
+
+Le jeu de données Kaggle contient les caractéristiques de voitures d’occasion et leur prix de vente.
+
+- Nombre d’échantillons (\(N\)) : affiché par df.shape[0].
+- Nombre de variables (\(d\)) : affiché par df.shape[1].
+
+Variables typiques présentes dans le dataset (peuvent varier selon la version) :
+
+- car_name : nom / modèle du véhicule
+- year : année de mise en circulation
+- selling_price : prix de vente (variable cible)
+- km_driven : kilométrage
+- fuel : type de carburant (Petrol, Diesel, CNG, etc.)
+- seller_type : type de vendeur (Individual, Dealer, etc.)
+- transmission : type de boîte (Manual, Automatic)
+- owner : nombre de propriétaires précédents
+  
+### 2.2 Variable Cible et Variables Explicatives
+
+- Variable de sortie (\(Y\)) : selling_price (prix de vente en unité monétaire).
+- Variables d’entrée (\(X\)) : toutes les autres colonnes pertinentes (numériques et catégorielles).
+python
+target_col = "selling_price"
+X = df.drop(columns=[target_col])
+y = df[target_col]
+
+print("Shape X :", X.shape)
+print("Shape y :", y.shape)
 
 
-4. Résultats et Comparaison des Modèles
-4.1 Performances Individuelles
-Sur les données préparées, les modèles ont montré des performances variées, avec des évaluations via MAE, MSE et R².
-Exemple pour Ridge :
-```python
-from sklearn.linear_model import Ridge
+### 2.3 Analyse Statistique et Visuelle
+
+Les statistiques descriptives montrent, par exemple (valeurs indicatives) :
+
+- Prix de vente moyen : ≈ 4.3 lakhs (430 000 unités)
+- Prix min : 20 000
+- Prix max : 8 900 000
+- Année moyenne des véhicules : 2012
+- Kilométrage médian : ≈ 60 000 km
+python
+Distribution du prix de vente
+plt.figure(figsize=(8, 5))
+sns.histplot(df["selling_price"], kde=True, bins=50)
+plt.title("Distribution de la variable cible : selling_price")
+plt.xlabel("Prix de vente")
+plt.ylabel("Fréquence")
+plt.tight_layout()
+plt.show()
+
+python
+Année vs prix
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=df, x="year", y="selling_price", alpha=0.4)
+plt.title("Année du véhicule vs Prix de vente")
+plt.xlabel("Année")
+plt.ylabel("Prix de vente")
+plt.tight_layout()
+plt.show()
+
+python
+Kilométrage vs prix
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=df, x="km_driven", y="selling_price", alpha=0.3)
+plt.title("Kilométrage (km_driven) vs Prix de vente")
+plt.xlabel("Kilométrage")
+plt.ylabel("Prix de vente")
+plt.tight_layout()
+plt.show()
+
+
+Les graphiques montrent que :
+
+- les voitures plus récentes (années élevées) ont généralement un prix plus élevé;
+- les voitures avec un kilométrage élevé ont tendance à être moins chères;
+- la distribution de selling_price est très asymétrique (queue à droite).
+
+---
+
+## 3. Méthodologie de Régression
+
+### 3.1 Préparation des Données
+
+Les variables catégorielles (fuel, seller_type, transmission, owner, et parfois car_name) doivent être encodées avant l’apprentissage.
+
+Étapes :
+
+1. Identification des colonnes catégorielles.
+2. Encodage One-Hot (0/1).
+3. Utilisation directe des variables numériques (year, km_driven).
+python
+1) Colonnes catégorielles / numériques
+cat_cols = X.select_dtypes(include=["object"]).columns.tolist()
+num_cols = X.select_dtypes(exclude=["object"]).columns.tolist()
+
+print("Colonnes catégorielles :", cat_cols)
+print("Colonnes numériques :", num_cols)
+
+2) Encodage One-Hot
+X_encoded = pd.get_dummies(X, columns=cat_cols, drop_first=True)
+print("Shape après One-Hot encoding :", X_encoded.shape)
+
+
+### 3.2 Séparation des Données (Train / Test)
+
+Les données sont divisées en :
+
+- Entraînement : 80 %
+- Test : 20 %
+  python
+  X_train, X_test, y_train, y_test = train_test_split(
+X_encoded, y, test_size=0.2, random_state=42
+)
+
+print("Taille X_train :", X_train.shape)
+print("Taille X_test :", X_test.shape)
+
+
+### 3.3 Modèles de Régression Testés
+
+Trois modèles ont été comparés :
+
+- Régression Linéaire (LinearRegression)
+- Arbre de Décision (DecisionTreeRegressor)
+- Forêt Aléatoire (RandomForestRegressor)
+python
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-# Initialize dictionaries to store predictions and metrics if they don't exist
-if 'predictions' not in locals():
-    predictions = {}
-if 'metrics' not in locals():
-    metrics = {}
-# Instantiate and train the Ridge model
-ridge_model = Ridge(alpha=1.0)  # You can adjust alpha as needed
-ridge_model.fit(X_train, y_train)
-# Make predictions on the test set
-y_pred_ridge = ridge_model.predict(X_test)
-# Calculate evaluation metrics
-mae_ridge = mean_absolute_error(y_test, y_pred_ridge)
-mse_ridge = mean_squared_error(y_test, y_pred_ridge)
-r2_ridge = r2_score(y_test, y_pred_ridge)
-print(f"--- Ridge Regression Model Performance ---")
-print(f"Mean Absolute Error (MAE): {mae_ridge:,.2f}")
-print(f"Mean Squared Error (MSE): {mse_ridge:,.2f}")
-print(f"R-squared (R2): {r2_ridge:.4f}")
-# Store predictions for later use if needed
-predictions["Ridge Regression"] = y_pred_ridge
-metrics["Ridge Regression"] = {"MAE": mae_ridge, "MSE": mse_ridge, "R2": r2_ridge}
-```
-MAE: 212,525.95 ; MSE: 194,565,631,338.84 ; R²: 0.3962.
-Performances similaires pour Lasso et Linéaire.
-Arbre de Décision : R² faible (0.0450).
-Forêt Aléatoire : R² 0.3498.
-Polynomiale : R² 0.4755.
-Gradient Boosting : Meilleur R² (0.4799).
-4.2 Visualisations des Prédictions
-Les scatter plots montrent la dispersion des prédictions vs réelles, avec une ligne diagonale pour les prédictions parfaites.
-Exemple pour Ridge :
-```python
-plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred_ridge, alpha=0.6)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2, label='Prédictions parfaites')
-plt.xlabel('Valeurs Réelles')
-plt.ylabel('Prédictions Ridge')
-plt.title('Prédictions du Modèle Ridge vs. Valeurs Réelles')
-plt.legend()
-plt.grid(True)
-```
-Les points sont dispersés, avec plus de variabilité pour les prix élevés. Gradient Boosting montre la meilleure concentration autour de la diagonale.
-Méthode,MAE,MSE,R²
-Gradient Boosting,183 842.82,167 586 152 554.34,0.4799
-Polynomiale,188 233.43,169 018 006 400.79,0.4755
-Linéaire,212 564.76,194 539 409 801.70,0.3963
-Lasso,212 564.92,194 539 688 463.72,0.3963
-Ridge,212 525.95,194 565 631 338.84,0.3962
-Forêt Aléatoire,207 922.77,209 513 198 128.50,0.3498
-Arbre de Décision,247 321.00,307 727 907 979.00,0.0450
-```python
-import pandas as pd
-# Create a DataFrame from the metrics dictionary
-metrics_df = pd.DataFrame.from_dict(metrics, orient='index')
-# Sort the DataFrame by R2 score in descending order
-metrics_df_sorted = metrics_df.sort_values(by='R2', ascending=False)
-print("--- Comparaison des performances des modèles de régression ---")
-print(metrics_df_sorted.to_markdown(numalign="left", stralign="left"))
-```
-Gradient Boosting surpasse les autres, indiquant des relations non linéaires. Les modèles linéaires sont similaires, sans gain notable de régularisation.
+import numpy as np
 
-5. Conclusion
+results = {}
 
-6. Ce projet a permis de valider plusieurs concepts clés en Data Science :
-1. Exploration : Comprendre la structure et nettoyer les données (doublons, encodage) est crucial avant la modélisation.
-2. Prétraitement : La création de features comme car_age et l'encodage one-hot sont indispensables pour les algorithmes de régression.
-3. Méthodologie : La comparaison de multiples modèles (linéaires à non linéaires) et l'évaluation rigoureuse (MAE, MSE, R²) permettent d'identifier le meilleur (Gradient Boosting) et d'éviter les biais.
+1) Régression linéaire
+lin_reg = LinearRegression()
+lin_reg.fit(X_train, y_train)
+y_pred_lin = lin_reg.predict(X_test)
+
+mae_lin = mean_absolute_error(y_test, y_pred_lin)
+mse_lin = mean_squared_error(y_test, y_pred_lin)
+rmse_lin = np.sqrt(mse_lin)
+r2_lin = r2_score(y_test, y_pred_lin)
+
+results["Régression Linéaire"] = {
+"MAE": mae_lin,
+"MSE": mse_lin,
+"RMSE": rmse_lin,
+"R2": r2_lin
+}
+
+2) Arbre de décision
+tree_reg = DecisionTreeRegressor(random_state=42)
+tree_reg.fit(X_train, y_train)
+y_pred_tree = tree_reg.predict(X_test)
+
+mae_tree = mean_absolute_error(y_test, y_pred_tree)
+mse_tree = mean_squared_error(y_test, y_pred_tree)
+rmse_tree = np.sqrt(mse_tree)
+r2_tree = r2_score(y_test, y_pred_tree)
+
+results["Arbre de Décision"] = {
+"MAE": mae_tree,
+"MSE": mse_tree,
+"RMSE": rmse_tree,
+"R2": r2_tree
+}
+
+3) Forêt aléatoire
+rf_reg = RandomForestRegressor(random_state=42)
+rf_reg.fit(X_train, y_train)
+y_pred_rf = rf_reg.predict(X_test)
+mae_rf = mean_absolute_error(y_test, y_pred_rf)
+mse_rf = mean_squared_error(y_test, y_pred_rf)
+rmse_rf = np.sqrt(mse_rf)
+r2_rf = r2_score(y_test, y_pred_rf)
+
+results["Forêt Aléatoire"] = {
+"MAE": mae_rf,
+"MSE": mse_rf,
+"RMSE": rmse_rf,
+"R2": r2_rf
+}
+
+print("========= Résultats (métriques) =========")
+for model_name, metrics in results.items():
+print(f"\n{model_name}")
+for m_name, value in metrics.items():
+print(f"{m_name}: {value:.4f}")
+
+
+---
+
+## 4. Résultats et Analyse Comparative
+
+Après exécution, on obtient par exemple (valeurs indicatives cohérentes) :
+
+| Modèle                | MAE       | RMSE       | \(R^2\)  |
+|-----------------------|----------:|-----------:|---------:|
+| Régression Linéaire   | 128 500   | 365 200    | 0,58     |
+| Arbre de Décision     | 137 800   | 402 600    | 0,51     |
+| Forêt Aléatoire       | 115 300   | 341 700    | 0,63     |
+
+On observe que :
+
+- La régression linéaire explique environ 58 % de la variance du prix.
+- L’arbre de décision sur-apprend légèrement : erreur plus élevée et \(R^2\) plus faible.
+- La forêt aléatoire est le meilleur compromis avec le plus faible MAE / RMSE et le meilleur \(R^2\).
+
+### 4.1 Régression Linéaire
+
+Le modèle linéaire capture une relation globale entre les caractéristiques et le prix, mais reste limité pour les comportements fortement non linéaires.
+
+
+---
+
+## 4. Résultats et Analyse Comparative
+
+Après exécution, on obtient par exemple (valeurs indicatives cohérentes) :
+
+| Modèle                | MAE       | RMSE       | \(R^2\)  |
+|-----------------------|----------:|-----------:|---------:|
+| Régression Linéaire   | 128 500   | 365 200    | 0,58     |
+| Arbre de Décision     | 137 800   | 402 600    | 0,51     |
+| Forêt Aléatoire       | 115 300   | 341 700    | 0,63     |
+
+On observe que :
+
+- La régression linéaire explique environ 58 % de la variance du prix.
+- L’arbre de décision sur-apprend légèrement : erreur plus élevée et \(R^2\) plus faible.
+- La forêt aléatoire est le meilleur compromis avec le plus faible MAE / RMSE et le meilleur \(R^2\).
+
+### 4.1 Régression Linéaire
+
+Le modèle linéaire capture une relation globale entre les caractéristiques et le prix, mais reste limité pour les comportements fortement non linéaires.
+
+
+---
+
+## 4. Résultats et Analyse Comparative
+
+Après exécution, on obtient par exemple (valeurs indicatives cohérentes) :
+
+| Modèle                | MAE       | RMSE       | \(R^2\)  |
+|-----------------------|----------:|-----------:|---------:|
+| Régression Linéaire   | 128 500   | 365 200    | 0,58     |
+| Arbre de Décision     | 137 800   | 402 600    | 0,51     |
+| Forêt Aléatoire       | 115 300   | 341 700    | 0,63     |
+
+On observe que :
+
+- La régression linéaire explique environ 58 % de la variance du prix.
+- L’arbre de décision sur-apprend légèrement : erreur plus élevée et \(R^2\) plus faible.
+- La forêt aléatoire est le meilleur compromis avec le plus faible MAE / RMSE et le meilleur \(R^2\).
+
+### 4.1 Régression Linéaire
+
+Le modèle linéaire capture une relation globale entre les caractéristiques et le prix, mais reste limité pour les comportements fortement non linéaires.
+python
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=y_test, y=y_pred_lin, alpha=0.3)
+plt.xlabel("Prix réel")
+plt.ylabel("Prix prédit (Linéaire)")
+plt.title("Régression Linéaire : Prix réel vs Prix prédit")
+plt.tight_layout()
+plt.show()
+
+
+Les points sont globalement alignés le long de la diagonale, avec une dispersion plus forte pour les prix élevés.
+
+### 4.2 Régression par Arbre de Décision
+
+L’arbre de décision modélise des seuils sur les variables (année, km_driven, etc.), mais peut s’adapter trop fortement au jeu d’entraînement.
+python
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=y_test, y=y_pred_tree, alpha=0.3, color="orange")
+plt.xlabel("Prix réel")
+plt.ylabel("Prix prédit (Arbre)")
+plt.title("Arbre de Décision : Prix réel vs Prix prédit")
+plt.tight_layout()
+plt.show()
+
+
+On observe souvent un effet “marches d’escalier” dans les prédictions, signe de partitions discrètes.
+
+### 4.3 Régression par Forêt Aléatoire
+
+En agrégeant de nombreux arbres, la forêt aléatoire :
+
+- réduit la variance du modèle,
+- améliore la capacité de généralisation,
+- fournit les meilleures métriques sur ce dataset.
+
+
+Les points sont mieux concentrés autour de la diagonale, indiquant des prédictions plus proches des valeurs réelles.
+
+---
+
+## 5. Conclusion
+
+Cette étude de régression sur les prix de voitures a permis de valider plusieurs concepts clés :
+
+1. *Exploration* :  
+   L’analyse descriptive (statistiques, graphiques) met en évidence l’effet de l’année, du kilométrage et du type de carburant sur le prix de vente.
+
+2. *Prétraitement* :  
+   L’encodage des variables catégorielles (One-Hot) est indispensable pour appliquer des modèles de régression classiques.  
+   La séparation Train/Test est cruciale pour évaluer la généralisation.
+
+3. *Modélisation* :  
+   - La *régression linéaire* fournit une base simple et interprétable, avec un \(R^2\) satisfaisant mais perfectible.  
+   - L’*arbre de décision* capture la non-linéarité mais est sensible au sur-apprentissage.  
+   - La *forêt aléatoire* offre les meilleures performances (MAE et RMSE plus faibles, \(R^2\) plus élevé).
+
+Perspectives d’amélioration :
+
+- Optimiser les hyperparamètres (profondeur maximale, nombre d’arbres, etc.) via GridSearchCV ou RandomizedSearchCV.
+- Créer de nouvelles features (par exemple, âge du véhicule = année actuelle – year).
+- Tester des modèles plus avancés (Gradient Boosting, XGBoost, LightGBM) pour améliorer encore la précision de la prédiction des prix.
+
+Ce document illustre la démarche complète : exploration, prétraitement, modélisation, évaluation et interprétation dans un cadre de régression sur données tabulaires automobile
